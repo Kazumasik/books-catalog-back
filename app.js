@@ -63,7 +63,7 @@ app.use((error, req, res, next) => {
 mongoose.connect(
     'mongodb+srv://maxim4ik:qSfI1yz2bti9bQ0W@cluster0.nyu4b6m.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true} 
   ).then(result => {
-    app.listen(8000);
+    app.listen(5173);
     console.log('Server started succesfully!')
   })
   .catch(err => console.log(err));
