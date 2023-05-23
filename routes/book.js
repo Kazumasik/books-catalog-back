@@ -5,12 +5,13 @@ const isAdmin = require("../middleware/is-admin");
 const bookController = require("../controllers/book");
 const commentController = require("../controllers/comment");
 const ratingController = require('../controllers/rating');
+const bookUpload = require("../middleware/uploadBook");
 
 const router = express.Router();
 
 router.get("/search", bookController.searchBooksByTitle);
 
-router.post("/create", isAuth, isAdmin, bookController.postBook);
+router.post("/create", isAuth, isAdmin, bookUpload, bookController.postBook);
 
 router.post(
   "/:bookId/comment",
@@ -26,7 +27,7 @@ router.delete("/comment/:commentId", isAuth, commentController.deleteComment);
 
 router.put("/comment/:commentId", isAuth, commentController.updateComment);
 
-router.put("/:bookId", isAuth, isAdmin, bookController.updateBook);
+router.put("/:bookId", isAuth, isAdmin,  bookUpload, bookController.updateBook);
 
 router.delete("/:bookId", isAuth, isAdmin, bookController.deleteBook);
 

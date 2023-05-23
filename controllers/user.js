@@ -19,7 +19,6 @@ exports.getUser = (req, res, next) => {
     });
 };
 exports.getCurrent = (req, res, next) => {
-  console.log(req.userId);
   User.findById(req.userId, "_id nickname email role")
     .then((user) => {
       if (!user) {

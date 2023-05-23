@@ -3,8 +3,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
-const coverUpload = require("./middleware/uploadImage");
-const contentUpload = require("./middleware/uploadBook");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const bookRoutes = require("./routes/book");
@@ -29,7 +27,7 @@ app.use((req, res, next) => {
 
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
-app.use("/book", coverUpload, bookRoutes);
+app.use("/book", bookRoutes);
 app.use("/genre", genreRoutes);
 
 app.use((error, req, res, next) => {

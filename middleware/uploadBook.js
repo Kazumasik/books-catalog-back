@@ -2,7 +2,11 @@ const multer = require("multer");
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "books");
+    if (file.fieldname === "content") {
+      cb(null, "books");
+    } else if (file.fieldname === "image") {
+      cb(null, "images");
+    }
   },
   filename: (req, file, cb) => {
     cb(
@@ -13,21 +17,40 @@ const fileStorage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === "application/epub+zip") {
-    cb(null, true);
+  if (file.fieldname === "content") {
+    if (file.mimetype === "application/epub+zip") {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
   } else {
-    cb(null, false);
+    if (
+      file.mimetype === "image/png" ||
+      file.mimetype === "image/jpg" ||
+      file.mimetype === "image/jpeg"
+    ) {
+      cb(null, true);
+    } else {
+      cb(null, false); // else fails
+    }
   }
 };
 
-const limits = {
-  fileSize: 1024 * 1024 * 10,
-};
-
-const uploadBook = multer({
+const uploadBookFiles = multer({
   storage: fileStorage,
   fileFilter: fileFilter,
-  limits: limits,
-}).single("book");
+  limits: {
+    fileSize: "5mb",
+  },
+}).fields([
+  {
+    name: "content",
+    maxCount: 1,
+  },
+  {
+    name: "image",
+    maxCount: 1,
+  },
+]);
 
-module.exports = uploadBook;
+module.exports = uploadBookFiles;

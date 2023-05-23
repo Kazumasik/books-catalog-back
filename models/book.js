@@ -18,6 +18,10 @@ const bookSchema = new Schema(
       type: String,
       required: true,
     },
+    contentUrl: {
+      type: String,
+      required: true,
+    },
     genres: [
       {
         type: mongoose.Schema.Types.ObjectId,

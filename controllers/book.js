@@ -39,8 +39,8 @@ exports.getBooks = async (req, res, next) => {
   }
 };
 exports.postBook = (req, res, next) => {
-  console.log(req.file)
-  const imageUrl = req.file.path;
+  const imageUrl = req.files.image[0].path;
+  const contentUrl = req.files.content[0].path;
   const title = req.body.title;
   const origTitle = req.body.origTitle;
   const description = req.body.description;
@@ -52,6 +52,7 @@ exports.postBook = (req, res, next) => {
     description: description,
     genres: genres,
     imageUrl: imageUrl,
+    contentUrl: contentUrl,
   });
   book
     .save()
