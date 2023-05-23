@@ -8,6 +8,12 @@ const router = express.Router();
 
 router.get("/current", isAuth, userController.getCurrent);
 
+router.put('/password', isAuth, userController.changePassword);
+
+router.put("/", isAuth, userController.editUserName);
+
 router.get("/:userId", userController.getUser);
+
+
 
 module.exports = router;

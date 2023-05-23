@@ -39,6 +39,7 @@ exports.signup = (req, res, next) => {
           id: result._id,
           nickname: result.nickname,
           email: result.email,
+          role: result.role,
         },
       });
     })
@@ -83,6 +84,7 @@ exports.login = (req, res, next) => {
           id: loadedUser._id,
           nickname: loadedUser.nickname,
           email: loadedUser.email,
+          role: loadedUser.role,
         },
       });
     })
