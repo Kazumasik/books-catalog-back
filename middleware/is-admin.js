@@ -2,7 +2,6 @@ const User = require('../models/user');
 
 const isAdmin = (req, res, next) => {
   User.findById(req.userId).then((user)=>{
-    console.log(user)
     if (user.role === "admin") {
       next();
     } else {

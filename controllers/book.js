@@ -1,7 +1,7 @@
 const Book = require("../models/book");
 const Comment = require("../models/comment");
 const path = require("path");
-const fs = require('fs'); 
+const fs = require("fs");
 exports.getBooks = async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
@@ -22,7 +22,7 @@ exports.getBooks = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select("-comments")
+        .select("-comments -ratings")
         .populate("genres")
         .lean(),
     ]);
@@ -39,6 +39,7 @@ exports.getBooks = async (req, res, next) => {
   }
 };
 exports.postBook = (req, res, next) => {
+  console.log(req.file)
   const imageUrl = req.file.path;
   const title = req.body.title;
   const origTitle = req.body.origTitle;
@@ -68,28 +69,66 @@ exports.updateBook = (req, res, next) => {
     title: req.body.title,
     origTitle: req.body.origTitle,
     description: req.body.description,
-    genres: req.body.genres,
+    genres: JSON.parse(req.body.genres),
   };
 
-  Book.findByIdAndUpdate(bookId, updateData, { new: true })
-    .then((updatedBook) => {
-      if (!updatedBook) {
-        return res
-          .status(404)
-          .json({ error: "Book with this id does not exist" });
-      }
-      res.send(updatedBook);
-    })
-    .catch((error) => {
-      next(error);
-    });
-};
+  // Check if a new image is uploaded
+  if (req.file) {
+    const newImageUrl = req.file.path;
 
+    // Find the book and retrieve the old image URL
+    Book.findById(bookId)
+      .then((book) => {
+        if (!book) {
+          // Book not found
+          throw new Error("Book with this id does not exist");
+        }
+
+        const oldImageUrl = book.imageUrl;
+
+        // Update the book with the new image URL
+        updateData.imageUrl = newImageUrl;
+
+        // Remove the old image file
+        fs.unlinkSync(oldImageUrl);
+
+        // Update the book in the database
+        return Book.findByIdAndUpdate(bookId, updateData, { new: true });
+      })
+      .then((updatedBook) => {
+        if (!updatedBook) {
+          // Book not found
+          throw new Error("Book with this id does not exist");
+        }
+
+        res.send(updatedBook);
+      })
+      .catch((error) => {
+        // Handle errors
+        next(error);
+      });
+  } else {
+    // No new image uploaded, update the book without modifying the imageUrl
+    Book.findByIdAndUpdate(bookId, updateData, { new: true })
+      .then((updatedBook) => {
+        if (!updatedBook) {
+          // Book not found
+          throw new Error("Book with this id does not exist");
+        }
+
+        res.send(updatedBook);
+      })
+      .catch((error) => {
+        // Handle errors
+        next(error);
+      });
+  }
+};
 exports.getBookById = (req, res, next) => {
   const bookId = req.params.bookId;
   Book.findById(bookId)
     .populate("genres")
-    .select("-comments")
+    .select("-comments -ratings")
     .then((book) => {
       res.status(200).send(book);
     })

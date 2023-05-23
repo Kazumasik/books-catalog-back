@@ -31,9 +31,29 @@ const bookSchema = new Schema(
         ref: "Comment",
       },
     ],
+    ratings: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        rating: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
+    totalRatings: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
-
 
 module.exports = mongoose.model("Book", bookSchema);

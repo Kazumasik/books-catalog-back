@@ -4,6 +4,7 @@ const isAuth = require("../middleware/is-auth");
 const isAdmin = require("../middleware/is-admin");
 const bookController = require("../controllers/book");
 const commentController = require("../controllers/comment");
+const ratingController = require('../controllers/rating');
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post(
   [body("content").trim().not().isEmpty()],
   commentController.createComment
 );
+router.post('/:bookId/rating', isAuth, ratingController.addRating);
 
 router.get("/:bookId/comment", commentController.getComments);
 
