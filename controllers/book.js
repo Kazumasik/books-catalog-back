@@ -2,6 +2,8 @@ const Book = require("../models/book");
 const Comment = require("../models/comment");
 const path = require("path");
 const fs = require("fs");
+const mammoth = require("mammoth");
+
 exports.getBooks = async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
@@ -28,12 +30,15 @@ exports.getBooks = async (req, res, next) => {
     ]);
 
     const totalPages = Math.ceil(totalBooksCount / limit);
-
-    res.send({
-      books,
-      totalPages,
-      page,
-    });
+    if (books.length != 0) {
+      res.send({
+        books,
+        totalPages,
+        page,
+      });
+    } else {
+      res.send({ message: "Не знайдено книг за такими параметрами" });
+    }
   } catch (error) {
     next(error);
   }
@@ -64,7 +69,8 @@ exports.postBook = (req, res, next) => {
     });
 };
 
-exports.updateBook = (req, res, next) => {
+
+exports.updateBook = async (req, res, next) => {
   const bookId = req.params.bookId;
   const updateData = {
     title: req.body.title,
@@ -73,56 +79,63 @@ exports.updateBook = (req, res, next) => {
     genres: JSON.parse(req.body.genres),
   };
 
-  // Check if a new image is uploaded
-  if (req.file) {
-    const newImageUrl = req.file.path;
+  let hasNewImage = false;
+  let hasNewContent = false;
 
-    // Find the book and retrieve the old image URL
-    Book.findById(bookId)
-      .then((book) => {
-        if (!book) {
-          // Book not found
-          throw new Error("Book with this id does not exist");
-        }
+  if (req.files && req.files.image && req.files.image[0].path) {
+    const newImageUrl = req.files.image[0].path;
 
-        const oldImageUrl = book.imageUrl;
+    try {
+      const book = await Book.findById(bookId);
+      if (!book) {
+        throw new Error("Book with this id does not exist");
+      }
 
-        // Update the book with the new image URL
-        updateData.imageUrl = newImageUrl;
+      const oldImageUrl = book.imageUrl;
+      updateData.imageUrl = newImageUrl;
+      hasNewImage = true;
 
-        // Remove the old image file
-        fs.unlinkSync(oldImageUrl);
+      await fs.promises.unlink(oldImageUrl);
+    } catch (error) {
+      // Remove the new image file if an error occurs
+      if (hasNewImage) {
+        await fs.promises.unlink(newImageUrl);
+      }
+      return next(error);
+    }
+  }
 
-        // Update the book in the database
-        return Book.findByIdAndUpdate(bookId, updateData, { new: true });
-      })
-      .then((updatedBook) => {
-        if (!updatedBook) {
-          // Book not found
-          throw new Error("Book with this id does not exist");
-        }
+  if (req.files && req.files.content && req.files.content[0].path) {
+    const newContentUrl = req.files.content[0].path;
 
-        res.send(updatedBook);
-      })
-      .catch((error) => {
-        // Handle errors
-        next(error);
-      });
-  } else {
-    // No new image uploaded, update the book without modifying the imageUrl
-    Book.findByIdAndUpdate(bookId, updateData, { new: true })
-      .then((updatedBook) => {
-        if (!updatedBook) {
-          // Book not found
-          throw new Error("Book with this id does not exist");
-        }
+    try {
+      const book = await Book.findById(bookId);
+      if (!book) {
+        throw new Error("Book with this id does not exist");
+      }
 
-        res.send(updatedBook);
-      })
-      .catch((error) => {
-        // Handle errors
-        next(error);
-      });
+      const oldContentUrl = book.contentUrl;
+      updateData.contentUrl = newContentUrl;
+      hasNewContent = true;
+
+      await fs.promises.unlink(oldContentUrl);
+    } catch (error) {
+      // Remove the new content file if an error occurs
+      if (hasNewContent) {
+        await fs.promises.unlink(newContentUrl);
+      }
+      return next(error);
+    }
+  }
+
+  try {
+    const updatedBook = await Book.findByIdAndUpdate(bookId, updateData, { new: true });
+    if (!updatedBook) {
+      throw new Error("Book with this id does not exist");
+    }
+    res.send(updatedBook);
+  } catch (error) {
+    next(error);
   }
 };
 exports.getBookById = (req, res, next) => {
@@ -181,6 +194,76 @@ exports.searchBooksByTitle = (req, res, next) => {
     .populate(["genres"])
     .then((books) => {
       res.json(books);
+    })
+    .catch((error) => {
+      next(error);
+    });
+};
+
+exports.downloadBookContent = (req, res, next) => {
+  const bookId = req.params.bookId;
+
+  Book.findById(bookId)
+    .then((book) => {
+      if (!book) {
+        return res.status(404).send("Book with this id does not exist.");
+      }
+
+      const contentPath = book.contentUrl;
+      const filePath = path.join(__dirname, "..", contentPath);
+      res.download(filePath, "book_content.docx");
+    })
+    .catch((error) => {
+      next(error);
+    });
+};
+
+exports.getBookContent = (req, res, next) => {
+  const bookId = req.params.bookId;
+  const pageNumber = req.query.page;
+  const paragraphsPerPage = 80;
+  Book.findById(bookId)
+    .then((book) => {
+      if (!book) {
+        const error = new Error("Book not found");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      mammoth
+        .convertToHtml({ path: book.contentUrl })
+        .then((result) => {
+          const html = result.value;
+
+          if (!pageNumber) {
+            const response = {
+              text: html,
+            };
+
+            res.setHeader("Content-Type", "application/json");
+            res.send(response);
+          } else {
+            const paragraphs = html.split("</p>");
+            const totalPages = Math.ceil(paragraphs.length / paragraphsPerPage);
+            const currentPageParagraphs = paragraphs.slice(
+              (pageNumber - 1) * paragraphsPerPage,
+              pageNumber * paragraphsPerPage
+            );
+
+            const currentPageText = currentPageParagraphs.join("</p>");
+            const response = {
+              currentPage: +pageNumber,
+              totalPages: totalPages,
+              text: currentPageText,
+            };
+
+            res.setHeader("Content-Type", "application/json");
+            res.send(response);
+          }
+        })
+        .catch((error) => {
+          next(error);
+        });
     })
     .catch((error) => {
       next(error);

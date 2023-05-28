@@ -16,9 +16,12 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
+    "epub-gen": "^0.1.0",
+    "epub2html": "^0.0.8",
     "express": "^4.16.3",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.0",
+    "mammoth": "^1.5.1",
     "mongodb": "^5.5.0",
     "mongoose": "^5.3.2",
     "multer": "^1.4.0"
@@ -26,7 +29,7 @@
   "devDependencies": {
     "nodemon": "^2.0.22"
   },
-  "engines":{
+  "engines": {
     "node": "18.13.0"
   }
 }

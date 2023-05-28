@@ -18,7 +18,10 @@ const fileStorage = multer.diskStorage({
 
 const fileFilter = (req, file, cb) => {
   if (file.fieldname === "content") {
-    if (file.mimetype === "application/epub+zip") {
+    if (
+      file.mimetype ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
       cb(null, true);
     } else {
       cb(null, false);
@@ -31,7 +34,7 @@ const fileFilter = (req, file, cb) => {
     ) {
       cb(null, true);
     } else {
-      cb(null, false); // else fails
+      cb(null, false);
     }
   }
 };
