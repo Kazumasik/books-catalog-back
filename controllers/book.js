@@ -234,8 +234,6 @@ exports.downloadBookContent = (req, res, next) => {
 
       const contentPath = book.contentUrl;
       const filePath = path.join(__dirname, "..", contentPath);
-      console.log(__dirname)
-      console.log(filePath)
       res.download(filePath, "book_content.docx");
     })
     .catch((error) => {
