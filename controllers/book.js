@@ -7,31 +7,46 @@ const mammoth = require("mammoth");
 
 exports.getBooks = async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
-  const limit = 10;
+  const limit = parseInt(req.query.limit) || 10; // Получаем значение параметра limit из запроса, по умолчанию 10
   const skip = (page - 1) * limit;
   const genreIds = req.query.genre; // Получаем значения параметра жанров из запроса
+  const categoryIds = req.query.category; // Получаем значения параметра категорий из запроса
+  const order = req.query.order; // Получаем значение параметра сортировки из запроса
 
   try {
     let query = Book.find();
 
     if (genreIds) {
-      const genreIdArray = Array.isArray(genreIds) ? genreIds : [genreIds]; // Преобразуем значения жанров в массив, если передано только одно значение
-      query = query.where("genres").all(genreIdArray); // Фильтруем книги по указанным жанрам
+      const genreIdArray = Array.isArray(genreIds) ? genreIds : [genreIds];
+      query = query.where("genres").all(genreIdArray);
+    }
+
+    if (categoryIds) {
+      const categoryIdArray = Array.isArray(categoryIds)
+        ? categoryIds
+        : [categoryIds];
+      query = query.where("categories").all(categoryIdArray);
+    }
+
+    if (order === "bookmarkCount") {
+      query = query.sort({ bookmarkCount: -1 });
+    } else {
+      query = query.sort({ createdAt: -1 });
     }
 
     const [totalBooksCount, books] = await Promise.all([
       Book.countDocuments(query),
       query
-        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .select("-comments -ratings")
         .populate("genres")
+        .populate("categories")
         .lean(),
     ]);
 
     const totalPages = Math.ceil(totalBooksCount / limit);
-    if (books.length != 0) {
+    if (books.length !== 0) {
       res.send({
         books,
         totalPages,
@@ -44,30 +59,40 @@ exports.getBooks = async (req, res, next) => {
     next(error);
   }
 };
-exports.postBook = (req, res, next) => {
+exports.postBook = async (req, res, next) => {
+  console.log(req)
+  if (!req.files.image) {
+    return res.status(400).json({ error: "Image is required" });
+  }
+  if (!req.files.content){
+    return res.status(400).json({ error: "Content is required" });
+  }
   const imageUrl = req.files.image[0].path;
   const contentUrl = req.files.content[0].path;
   const title = req.body.title;
   const origTitle = req.body.origTitle;
   const description = req.body.description;
   const genres = JSON.parse(req.body.genres);
+  const categories = JSON.parse(req.body.categories);
 
-  const book = new Book({
-    title: title,
-    origTitle: origTitle,
-    description: description,
-    genres: genres,
-    imageUrl: imageUrl,
-    contentUrl: contentUrl,
-  });
-  book
-    .save()
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((error) => {
-      next(error);
+  try {
+    const book = new Book({
+      title: title,
+      origTitle: origTitle,
+      description: description,
+      genres: genres,
+      imageUrl: imageUrl,
+      contentUrl: contentUrl,
+      categories: categories,
     });
+
+    const savedBook = await book.save();
+    res.send(savedBook);
+  } catch (error) {
+    await fs.promises.unlink(imageUrl);
+    await fs.promises.unlink(contentUrl);
+    next(error);
+  }
 };
 
 exports.updateBook = async (req, res, next) => {
@@ -77,6 +102,7 @@ exports.updateBook = async (req, res, next) => {
     origTitle: req.body.origTitle,
     description: req.body.description,
     genres: JSON.parse(req.body.genres),
+    categories: JSON.parse(req.body.categories),
   };
 
   let hasNewImage = false;
@@ -145,6 +171,7 @@ exports.getBookById = async (req, res, next) => {
     const bookId = req.params.bookId;
     const book = await Book.findById(bookId)
       .populate("genres")
+      .populate("categories")
       .select("-comments -ratings");
 
     if (!book) {
@@ -373,6 +400,31 @@ exports.removeBookmark = async (req, res, next) => {
     await user.save();
 
     res.send({ message: "Bookmark successfully deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getNewBooks = async (req, res, next) => {
+  const currentDate = new Date();
+  const oneWeekAgo = new Date(currentDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  try {
+    const books = await Book.find({
+      createdAt: { $gte: oneWeekAgo },
+    })
+      .sort({ averageRating: -1, bookmarkCount: -1 })
+      .limit(10)
+      .select("-comments -ratings")
+      .populate("genres")
+      .populate("categories")
+      .lean();
+
+    if (books.length !== 0) {
+      res.send(books);
+    } else {
+      res.send({ message: "No popular books found in the last week." });
+    }
   } catch (error) {
     next(error);
   }

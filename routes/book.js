@@ -10,6 +10,8 @@ const bookUpload = require("../middleware/uploadBook");
 
 const router = express.Router();
 
+router.get("/new", bookController.getNewBooks);
+
 router.get("/search", bookController.searchBooksByTitle);
 
 router.post("/create", isAuth, isAdmin, bookUpload, bookController.postBook);
