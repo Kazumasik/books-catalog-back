@@ -138,6 +138,7 @@ exports.updateBook = async (req, res, next) => {
     next(error);
   }
 };
+<<<<<<< HEAD
 exports.getBookById = (req, res, next) => {
   const bookId = req.params.bookId;
   Book.findById(bookId)
@@ -150,6 +151,29 @@ exports.getBookById = (req, res, next) => {
       if (!error.statusCode) {
         error.statusCode = 404;
         error.message = "Book with this id does not exist.";
+=======
+exports.getBookById = async (req, res, next) => {
+  try {
+    const bookId = req.params.bookId;
+    const book = await Book.findById(bookId)
+      .populate("genres")
+      .select("-comments -ratings");
+
+    if (!book) {
+      return res.status(404).send("Book with this id does not exist.");
+    }
+    let bookmarkType = null;
+
+    if (req.userId) {
+      const user = await User.findById(req.userId);
+      const bookmarkTypes = Object.keys(user.bookmarks);
+
+      for (const type of bookmarkTypes) {
+        if (user.bookmarks[type].includes(bookId)) {
+          bookmarkType = type;
+          break;
+        }
+>>>>>>> parent of 38b93e6 (fix)
       }
       next(error);
     });
@@ -269,3 +293,91 @@ exports.getBookContent = (req, res, next) => {
       next(error);
     });
 };
+<<<<<<< HEAD
+=======
+
+exports.putBookmark = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const bookId = req.params.bookId;
+    const bookmarkType = req.body.bookmarkType;
+
+    const user = await User.findById(userId);
+    let oldBookmark = false;
+    // Проверка наличия книги в выбранной закладке
+    if (user.bookmarks[bookmarkType].includes(bookId)) {
+      return res
+        .status(400)
+        .json({ error: "Book already in this bookmark type" });
+    }
+    // Удаление книги из других закладок пользователя
+    const otherBookmarkTypes = Object.keys(user.bookmarks).filter(
+      (type) => type !== bookmarkType
+    );
+    for (const type of otherBookmarkTypes) {
+      if (user.bookmarks[type].includes(bookId)) {
+        user.bookmarks[type] = user.bookmarks[type].filter(
+          (id) => id.toString() !== bookId
+        );
+        oldBookmark = true;
+        break;
+      }
+    }
+
+    // Добавление книги в выбранную закладку
+    user.bookmarks[bookmarkType].push(bookId);
+
+    await user.save();
+    if (!oldBookmark) {
+      const book = await Book.findByIdAndUpdate(bookId, {
+        $inc: { bookmarkCount: 1 },
+      });
+      res.send(book);
+    } else {
+      res.send({ message: "Bookmark successfully changed" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.removeBookmark = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const bookId = req.params.bookId;
+
+    const user = await User.findById(userId);
+    const book = await Book.findById(bookId);
+
+    let bookmarkType = null;
+    // Поиск типа закладки, в которой находится книга
+    for (const type in user.bookmarks) {
+      if (user.bookmarks[type].includes(bookId)) {
+        bookmarkType = type;
+        break;
+      }
+    }
+
+    if (!bookmarkType) {
+      return res.status(400).json({ error: "Book was not in any bookmark" });
+    }
+
+    // Удаление книги из найденной закладки
+    user.bookmarks[bookmarkType] = user.bookmarks[bookmarkType].filter(
+      (id) => id.toString() !== bookId
+    );
+
+    // Уменьшение значения bookmarkCount в модели Book
+    if (book) {
+      book.bookmarkCount -= 1;
+      await book.save();
+    }
+
+    await user.save();
+
+    res.send({ message: "Bookmark successfully deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+>>>>>>> parent of 38b93e6 (fix)
