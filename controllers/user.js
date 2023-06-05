@@ -3,12 +3,27 @@ const bcrypt = require("bcryptjs");
 
 exports.getUser = (req, res, next) => {
   const userId = req.params.userId;
+
   User.findById(userId)
+    .select("-password -role")
+    .populate({
+      path: "bookmarks.reading",
+      select: "-comments -description -bookmarkCount -totalRatings -ratings",
+      populate: { path: 'genres' }
+    })
+    .populate({
+      path: "bookmarks.end_read",
+      select: "-comments -description -bookmarkCount -totalRatings -ratings",
+      populate: { path: 'genres' }
+    })
+    .populate({
+      path: "bookmarks.will_read",
+      select: "-comments -description -bookmarkCount -totalRatings -ratings",
+      populate: { path: 'genres' }
+    })
+    .exec()
     .then((user) => {
-      res.status(200).send({
-        id: user._id,
-        nickname: user.nickname,
-      });
+      res.status(200).send(user);
     })
     .catch((error) => {
       if (!error.statusCode) {

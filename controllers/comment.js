@@ -6,10 +6,14 @@ const User = require("../models/user");
 
 // Контроллер для создания комментария
 exports.createComment = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     const { bookId } = req.params;
     const { content } = req.body;
-    const user = req.userId
+    const user = req.userId;
 
     const book = await Book.findById(bookId);
 

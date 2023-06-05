@@ -29,6 +29,13 @@ const bookSchema = new Schema(
         required: true,
       },
     ],
+    categories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+        required: false,
+      },
+    ],
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -53,6 +60,10 @@ const bookSchema = new Schema(
       default: 0,
     },
     totalRatings: {
+      type: Number,
+      default: 0,
+    },
+    bookmarkCount: {
       type: Number,
       default: 0,
     },
