@@ -7,7 +7,6 @@ const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const bookRoutes = require("./routes/book");
 const genreRoutes = require("./routes/genre");
-const categoryRoutes = require("./routes/category");
 
 const app = express();
 const PORT = 5002;
@@ -30,7 +29,6 @@ app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/book", bookRoutes);
 app.use("/genre", genreRoutes);
-app.use("/category", categoryRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);

@@ -29,13 +29,6 @@ const bookSchema = new Schema(
         required: true,
       },
     ],
-    categories: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
-        required: false,
-      },
-    ],
     comments: [
       {
         type: mongoose.Schema.Types.ObjectId,
