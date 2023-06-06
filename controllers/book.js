@@ -127,7 +127,6 @@ exports.updateBook = async (req, res, next) => {
       if (hasNewImage) {
         await fs.promises.unlink(newImageUrl);
       }
-      console.log(error)
       return next(error);
     }
   }
@@ -151,7 +150,6 @@ exports.updateBook = async (req, res, next) => {
       if (hasNewContent) {
         await fs.promises.unlink(newContentUrl);
       }
-      console.log(error)
       return next(error);
     }
   }
