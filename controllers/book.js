@@ -7,7 +7,7 @@ const mammoth = require("mammoth");
 
 exports.getBooks = async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10; // Получаем значение параметра limit из запроса, по умолчанию 10
+  const limit = parseInt(req.query.limit) || 15; // Получаем значение параметра limit из запроса, по умолчанию 10
   const skip = (page - 1) * limit;
   const genreIds = req.query.genre; // Получаем значения параметра жанров из запроса
   const categoryIds = req.query.category; // Получаем значения параметра категорий из запроса
@@ -60,11 +60,11 @@ exports.getBooks = async (req, res, next) => {
   }
 };
 exports.postBook = async (req, res, next) => {
-  console.log(req)
+  console.log(req);
   if (!req.files.image) {
     return res.status(400).json({ error: "Image is required" });
   }
-  if (!req.files.content){
+  if (!req.files.content) {
     return res.status(400).json({ error: "Content is required" });
   }
   const imageUrl = req.files.image[0].path;
@@ -355,6 +355,15 @@ exports.putBookmark = async (req, res, next) => {
     if (!oldBookmark) {
       const book = await Book.findByIdAndUpdate(bookId, {
         $inc: { bookmarkCount: 1 },
+      });
+      const experiencePoints = 20;
+      await User.findById(userId, (err, user) => {
+        if (err) {
+          console.error(err);
+        } else {
+          user.updateExperience(experiencePoints);
+          user.updateLevel();
+        }
       });
       res.send(book);
     } else {

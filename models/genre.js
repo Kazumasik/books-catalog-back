@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-
+const mongoose = require("mongoose");
+const Book = require("../models/book");
 const genreSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -7,6 +7,7 @@ const genreSchema = new mongoose.Schema({
   },
 });
 
-const Genre = mongoose.model('Genre', genreSchema);
+
+const Genre = mongoose.model("Genre", genreSchema);
 
 module.exports = Genre;

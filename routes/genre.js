@@ -6,8 +6,12 @@ const genreController = require("../controllers/genre");
 
 const router = express.Router();
 
-router.get('/all', genreController.getAllGenres);
+router.get("/all", genreController.getAllGenres);
 
-router.post('/create', isAuth, isAdmin, genreController.createGenre);
+router.post("/create", isAuth, isAdmin, genreController.createGenre);
+
+router.delete("/:genreId", isAuth, isAdmin, genreController.deleteGenre);
+
+router.put("/:genreId", isAuth, isAdmin, genreController.updateGenre);
 
 module.exports = router;
