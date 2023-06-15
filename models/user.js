@@ -57,7 +57,7 @@ const userSchema = new Schema({
 userSchema.methods.updateLevel = async function (experiencePoints) {
   const maxLevel = 3; // Максимальное количество уровней
   const experiencePerLevel = 100; // Количество опыта для первого уровня
-  const levelMultiplier = 1.25; // Множитель для следующего уровня
+  const levelMultiplier =2; // Множитель для следующего уровня
 
   let requiredExperience = experiencePerLevel;
   for (let i = 2; i <= this.level && i <= maxLevel; i++) {
