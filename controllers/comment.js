@@ -41,6 +41,14 @@ exports.createComment = async (req, res, next) => {
     book.comments.push(savedComment._id);
 
     await book.save();
+    const experiencePoints = 5;
+    User.findById(user, (err, user) => {
+      if (err) {
+        console.error(err);
+      } else {
+        user.updateLevel(experiencePoints);
+      }
+    });
     res.send(savedComment);
   } catch (error) {
     res.status(500).json({ error: "Server error" });

@@ -357,12 +357,11 @@ exports.putBookmark = async (req, res, next) => {
         $inc: { bookmarkCount: 1 },
       });
       const experiencePoints = 20;
-      await User.findById(userId, (err, user) => {
+      User.findById(userId, (err, user) => {
         if (err) {
           console.error(err);
         } else {
-          user.updateExperience(experiencePoints);
-          user.updateLevel();
+          user.updateLevel(experiencePoints);
         }
       });
       res.send(book);
