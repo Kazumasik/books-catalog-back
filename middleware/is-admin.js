@@ -2,7 +2,10 @@ const User = require('../models/user');
 
 const isAdmin = (req, res, next) => {
   User.findById(req.userId).then((user)=>{
-    if (user.role === "admin") {
+    if (user.role === "admin" || user.role === "superadmin") {
+      if(user.role === "superadmin"){
+        req.superAdmin = true;
+      }
       next();
     } else {
       res

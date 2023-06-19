@@ -5,21 +5,21 @@ exports.getUser = (req, res, next) => {
   const userId = req.params.userId;
 
   User.findById(userId)
-    .select("-password -role")
+    .select("-password")
     .populate({
       path: "bookmarks.reading",
       select: "-comments -description -bookmarkCount -totalRatings -ratings",
-      populate: { path: 'genres' }
+      populate: { path: "genres" },
     })
     .populate({
       path: "bookmarks.end_read",
       select: "-comments -description -bookmarkCount -totalRatings -ratings",
-      populate: { path: 'genres' }
+      populate: { path: "genres" },
     })
     .populate({
       path: "bookmarks.will_read",
       select: "-comments -description -bookmarkCount -totalRatings -ratings",
-      populate: { path: 'genres' }
+      populate: { path: "genres" },
     })
     .exec()
     .then((user) => {
@@ -108,5 +108,63 @@ exports.changePassword = async (req, res, next) => {
     return res
       .status(500)
       .json({ message: "An error occurred while changing the user password" });
+  }
+};
+
+exports.giveAdminRole = async (req, res, next) => {
+  try {
+    // Проверяем, есть ли права суперадмина
+    if (!req.superAdmin) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Изменяем роль пользователя на "admin"
+    user.role = "admin";
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "User role successfully changed to admin" });
+  } catch (error) {
+    console.error("Error changing user role:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while changing the user role" });
+  }
+};
+
+exports.removeAdminRole = async (req, res, next) => {
+  try {
+    // Проверяем, есть ли права суперадмина
+    if (!req.superAdmin) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Удаляем роль "admin" и устанавливаем роль "user"
+    user.role = "user";
+    await user.save();
+
+    return res.status(200).json({ message: "Admin role successfully removed" });
+  } catch (error) {
+    console.error("Error removing admin role:", error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while removing the admin role" });
   }
 };

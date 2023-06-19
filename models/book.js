@@ -9,7 +9,7 @@ const bookSchema = new Schema(
     },
     origTitle: {
       type: String,
-      required: true,
+      required: false,
     },
     description: {
       type: String,
@@ -26,7 +26,7 @@ const bookSchema = new Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Genre",
-        required: true,
+        required: false,
       },
     ],
     categories: [
